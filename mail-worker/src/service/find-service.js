@@ -6,8 +6,14 @@ import userService from './user-service';
 import emailUtils from '../utils/email-utils';
 import { emailConst, isDel } from '../const/entity-const';
 import { t } from '../i18n/i18n';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 const CODE_REGEX = /(?<!\d)\d{6}(?!\d)/;
+const CODE_VALID_MINUTES = 5;
+const NO_CODE = '暂无验证码';
 
 function pickCode(text) {
 	if (!text) return '';
@@ -56,7 +62,12 @@ const findService = {
 			.get();
 
 		if (!emailRow) {
-			return '';
+			return NO_CODE;
+		}
+
+		const createTime = dayjs.utc(emailRow.createTime);
+		if (!createTime.isValid() || dayjs.utc().diff(createTime, 'minute') >= CODE_VALID_MINUTES) {
+			return NO_CODE;
 		}
 
 		if (emailRow.code && /^\d{6}$/.test(emailRow.code)) {
@@ -74,7 +85,7 @@ const findService = {
 			if (code) return code;
 		}
 
-		return '';
+		return NO_CODE;
 	}
 };
 
